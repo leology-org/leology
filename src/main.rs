@@ -1,5 +1,5 @@
-pub mod engine;
 pub mod core;
+pub mod engine;
 
 use clap::{Parser, Subcommand};
 use std::future::Future;
