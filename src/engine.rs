@@ -2,10 +2,9 @@ use snarkvm::circuit::AleoV0 as Aleo;
 use snarkvm::ledger::block::Transaction;
 use snarkvm::package::Package;
 use snarkvm::prelude::*;
-use std::env;
 
 const SNARKVM_CONTRACTS_FOLDER: &str = "contracts";
-const PRIVATE_KEY_ENV: &str = "PRIVATE_KEY";
+const SNARKVM_CONTRACTS_BUILD_FOLDER: &str = "build";
 const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:3030";
 
 type Result<T> = core::result::Result<T, Box<dyn error::Error>>;
@@ -15,6 +14,18 @@ pub struct FunctionDef {
     inputs: Vec<Value<Testnet3>>,
 }
 
+impl FunctionDef {
+    pub fn try_from(name: &str, args: Vec<String>) -> Result<Self> {
+        Ok(Self {
+            function: Identifier::from_str(name)?,
+            inputs: args
+                .iter()
+                .map(|arg| Value::from_str(arg).unwrap())
+                .collect(),
+        })
+    }
+}
+
 pub struct Engine {
     package: Package<Testnet3>,
 }
@@ -22,18 +33,22 @@ pub struct Engine {
 impl Engine {
     pub fn try_load() -> Result<Self> {
         // load the package from the ./contracts folder
-        let package = Package::open(SNARKVM_CONTRACTS_FOLDER.as_ref())?;
-
-        // perform the build (this might fail)
-        package.build::<Aleo>(None)?;
+        let full_path = format!(
+            "{}/{}",
+            SNARKVM_CONTRACTS_FOLDER, SNARKVM_CONTRACTS_BUILD_FOLDER
+        );
+        let package = Package::open(full_path.as_ref())?;
 
         Ok(Self { package })
     }
 
-    pub fn execute(&self, def: FunctionDef) -> Result<(Response<Testnet3>, Transaction<Testnet3>)> {
+    pub fn execute(
+        &self,
+        def: FunctionDef,
+        private_key_str: &String,
+    ) -> Result<(Response<Testnet3>, Transaction<Testnet3>)> {
         // load the private key
-        let private_key_str = env::var(PRIVATE_KEY_ENV)?;
-        let private_key = PrivateKey::<Testnet3>::from_str(&*private_key_str)?;
+        let private_key = PrivateKey::<Testnet3>::from_str(private_key_str)?;
 
         // Initialize an RNG.
         let rng = &mut rand::thread_rng();
