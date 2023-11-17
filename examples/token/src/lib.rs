@@ -16,43 +16,46 @@ mod tests {
     #[test]
     fn public_minting_should_work() {
         // Publicly mint 100 tokens for Alice.
-        let (_, tx) = ENGINE
+        let (res, tx) = ENGINE
             .execute(
                 FunctionDef::try_from("mint_public", vec![ALICE_ADDRESS, "100u64"]).unwrap(),
                 ALICE_PK,
             )
             .expect("Could not mint 100 tokens for Alice");
         println!("{:?}", tx);
+        println!("{:?}", res);
     }
 
     #[test]
     fn private_minting_should_work() {
         // Privately mint 100 tokens for Bob.
-        let (_, tx) = ENGINE
+        let (res, tx) = ENGINE
             .execute(
                 FunctionDef::try_from("mint_private", vec![BOB_ADDRESS, "100u64"]).unwrap(),
                 BOB_PK,
             )
             .expect("Could not mint 100 tokens for Bob");
         println!("{:?}", tx);
+        println!("{:?}", res);
     }
 
     #[test]
     fn public_to_public_transfer_should_work() {
         // Publicly transfer 10 tokens from Alice to Bob
-        let (_, tx) = ENGINE
+        let (res, tx) = ENGINE
             .execute(
                 FunctionDef::try_from("transfer_public", vec![BOB_ADDRESS, "10u64"]).unwrap(),
                 ALICE_PK,
             )
             .expect("Could not perform the public-to-public transfer from Alice to Bob");
         println!("{:?}", tx);
+        println!("{:?}", res);
     }
 
     #[test]
     fn public_to_private_transfer_should_work() {
         // Publicly transfer 10 tokens from Alice to Bob
-        let (_, tx) = ENGINE
+        let (res, tx) = ENGINE
             .execute(
                 FunctionDef::try_from("transfer_public_to_private", vec![BOB_ADDRESS, "30u64"])
                     .unwrap(),
@@ -60,6 +63,7 @@ mod tests {
             )
             .expect("Could not perform the public-to-private transfer from Alice to Bob");
         println!("{:?}", tx);
+        println!("{:?}", res);
     }
 
     #[test]
@@ -74,7 +78,7 @@ mod tests {
             )
             .expect("Could not mint 100 tokens for Bob");
         println!("{:?}", tx);
-        println!("{:?}", tx);
+        println!("{:?}", res);
         let output = res.outputs().get(0).unwrap().to_string();
         let (res, tx) = ENGINE
             .execute(
