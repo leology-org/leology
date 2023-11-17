@@ -63,3 +63,10 @@ done
 
 # Attach to the tmux session to view and interact with the windows
 tmux attach-session -t "devnet"
+
+# clean up the blockchain data and logs
+tmux kill-session -t devnet || echo
+for validator_index in "${validator_indices[@]}"; do
+  tmux kill-window -t "devnet:$validator_index" || echo
+done
+rm -rf .ledger-* .logs-*

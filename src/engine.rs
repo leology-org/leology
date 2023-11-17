@@ -15,7 +15,7 @@ pub struct FunctionDef {
 }
 
 impl FunctionDef {
-    pub fn try_from(name: &str, args: Vec<String>) -> Result<Self> {
+    pub fn try_from(name: &str, args: Vec<&str>) -> Result<Self> {
         Ok(Self {
             function: Identifier::from_str(name)?,
             inputs: args
@@ -45,7 +45,7 @@ impl Engine {
     pub fn execute(
         &self,
         def: FunctionDef,
-        private_key_str: &String,
+        private_key_str: &str,
     ) -> Result<(Response<Testnet3>, Transaction<Testnet3>)> {
         // load the private key
         let private_key = PrivateKey::<Testnet3>::from_str(private_key_str)?;
