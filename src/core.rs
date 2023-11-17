@@ -14,12 +14,9 @@ use rand_chacha::ChaChaRng;
 
 type Network = Testnet3;
 
-
 pub fn devnet() -> std::io::Result<()> {
     // Execute the bash script using the Command module
-    let status = Command::new("bash")
-        .arg("devnet.sh")
-        .status()?;
+    let status = Command::new("bash").arg("devnet.sh").status()?;
 
     // Check if the script executed successfully
     if status.success() {
