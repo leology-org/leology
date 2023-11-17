@@ -61,4 +61,29 @@ mod tests {
             .expect("Could not perform the public-to-private transfer from Alice to Bob");
         println!("{:?}", tx);
     }
+
+    #[test]
+    fn private_to_private_transfer_should_work() {
+        // Publicly transfer 10 tokens from Alice to Bob
+
+        // we firstly mint again to get the UTXO
+        let (res, tx) = ENGINE
+            .execute(
+                FunctionDef::try_from("mint_private", vec![BOB_ADDRESS, "100u64"]).unwrap(),
+                BOB_PK,
+            )
+            .expect("Could not mint 100 tokens for Bob");
+        println!("{:?}", tx);
+        println!("{:?}", tx);
+        let output = res.outputs().get(0).unwrap().to_string();
+        let (res, tx) = ENGINE
+            .execute(
+                FunctionDef::try_from("transfer_private", vec![&output, ALICE_ADDRESS, "20u64"])
+                    .unwrap(),
+                BOB_PK,
+            )
+            .expect("Could not perform the private-to-private transfer from Alice to Bob");
+        println!("{:?}", tx);
+        println!("{:?}", res);
+    }
 }
