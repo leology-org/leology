@@ -9,5 +9,8 @@ edition = "2021"
 clap = { version = "4.4.8", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 rand = "0.8.5"
-snarkvm = "0.16.9"
+snarkvm = "0.16.8"
 snarkvm-console = "0.16.6"
+anyhow = "1.0.75"
+rand_chacha = "0.3.1"
+snarkos-account = "2.2.4"

@@ -8,7 +8,7 @@ total_validators="4"
 # Ask the user if they want to run 'cargo install --path .' or use a pre-installed binary
 #read -p "Do you want to run 'cargo install --path .' to build the binary? (y/n, default: y): " build_binary
 #build_binary=${build_binary:-y}
-build_binary="y"
+build_binary="n"
 
 # Ask the user whether to clear the existing ledger logs
 #read -p "Do you want to clear the existing ledger logs? (y/n, default: n): " clear_logs
