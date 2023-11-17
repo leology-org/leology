@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use leology::engine::{Engine, FunctionDef, Identifier};
+    use leology::engine::{Engine, FunctionDef, Identifier, self};
 
     lazy_static! {
         static ref engine: &'static Engine = Engine::try_load()
