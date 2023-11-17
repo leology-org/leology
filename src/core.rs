@@ -1,7 +1,9 @@
 use core::str::FromStr;
 use std::process::Command;
 
+use anyhow::{anyhow, Result};
 use rand::SeedableRng;
+use rand_chacha::ChaChaRng;
 use snarkvm::console::{
     account::PrivateKey,
     network::Testnet3,
@@ -9,14 +11,11 @@ use snarkvm::console::{
     types::Field,
 };
 
-use anyhow::{anyhow, Result};
-use rand_chacha::ChaChaRng;
-
 type Network = Testnet3;
 
-pub fn devnet() -> std::io::Result<()> {
+fn execute_script(command: &str) -> std::io::Result<()> {
     // Execute the bash script using the Command module
-    let status = Command::new("bash").arg("devnet.sh").status()?;
+    let status = Command::new("bash").arg(command).status()?;
 
     // Check if the script executed successfully
     if status.success() {
@@ -26,6 +25,14 @@ pub fn devnet() -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+pub fn devnet_start() -> std::io::Result<()> {
+    execute_script("start.sh")
+}
+
+pub fn devnet_stop() -> std::io::Result<()> {
+    execute_script("stop.sh")
 }
 
 pub fn new_account(seed: Option<String>) -> Result<snarkos_account::Account<Testnet3>> {

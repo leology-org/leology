@@ -1,8 +1,6 @@
-use std::future::Future;
-
 use clap::{Parser, Subcommand};
 
-use crate::core::devnet;
+use crate::core::{devnet_start, devnet_stop};
 
 mod core;
 
@@ -17,17 +15,23 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Subcommand to run tests.
-    Node,
+    /// Subcommand to start the blockchain
+    Start,
+    /// Subcommand to stop the blockchain
+    Stop,
 }
 
 fn main() {
     let args = Args::parse();
 
     match args.command {
-        Commands::Node => {
+        Commands::Start => {
             println!("Starting the blockchain...");
-            devnet().expect("Failure starting the devnet");
+            devnet_start().expect("Failure starting the devnet");
+        }
+        Commands::Stop => {
+            println!("Stopping the blockchain...");
+            devnet_stop().expect("Failure stopping the devnet");
         }
     }
 }
