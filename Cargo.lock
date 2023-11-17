@@ -961,6 +961,7 @@ name = "leology"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "rand",
  "snarkvm",
  "snarkvm-console",
  "tokio",
