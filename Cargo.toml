@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.4.8", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
+snarkvm = "0.16.9"
+snarkvm-console = "0.16.6"
