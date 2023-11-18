@@ -60,6 +60,12 @@ To spin up the local testnet
 $ cargo run start
 ```
 
+To stop the local testnet
+
+```console
+$ cargo run stop
+```
+
 ### To test the example Leo program
 
 Navigate to the directory
@@ -73,15 +79,6 @@ Run the testing command
 ```console
 $ cargo test
 ```
-
-### Programmatic use
-
-To stop the local testnet
-
-```console
-$ cargo run stop
-```
-
 
 ## Future
 
