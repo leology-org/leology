@@ -39,6 +39,8 @@ Leology is an Aleo testing framework that makes developing Leo programs faster, 
 - Tmux
 - Rust
 - Cargo
+- [snarkOS](https://github.com/AleoHQ/snarkOS)
+- [snarkVM](https://github.com/AleoHQ/snarkVM)
 
 ### Command line use
 
