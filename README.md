@@ -1,6 +1,6 @@
 <!-- Using h2 instead of h1 because npm doesn't support align=center on h1 tags -->
 <h1 align="center">
-  <a href="#readme" title="Leology README.md"><img alt="Leology" src="README/leologo.png" alt="Leology" width="160"/></a>
+  <a href="#readme" title="Leology README.md"><img alt="Leology" src="img/leologo.png" alt="Leology" width="160"/></a>
 
 
 Leology
@@ -47,7 +47,7 @@ Leology is an Aleo testing framework that makes developing Leo programs faster, 
 Clone this Repository
 
 ```console
-$ git clone git@github.com:ottodevs/leology.git
+$ git clone https://github.com/leology-org/leology.git
 ```
 
 Navigate to the directory
