@@ -15,9 +15,9 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Subcommand to start the blockchain
+    /// Subcommand to start the local devnet
     Start,
-    /// Subcommand to stop the blockchain
+    /// Subcommand to stop the local devnet
     Stop,
 }
 
