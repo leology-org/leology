@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 leology = { path = "../.." }
+#leology = { git = "https://github.com/leology-org/leology.git", branch = "main" }
 
 [dev-dependencies]
 lazy_static = "1.4.0"

@@ -1,3 +1,4 @@
+workspace = { members = ["examples/token"] }
 [package]
 name = "leology"
 version = "0.1.0"

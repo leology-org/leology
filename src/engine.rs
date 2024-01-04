@@ -3,7 +3,6 @@ use snarkvm::ledger::block::Transaction;
 use snarkvm::package::Package;
 use snarkvm::prelude::*;
 
-const SNARKVM_CONTRACTS_FOLDER: &str = "contracts";
 const SNARKVM_CONTRACTS_BUILD_FOLDER: &str = "build";
 const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:3030";
 
@@ -33,10 +32,7 @@ pub struct Engine {
 impl Engine {
     pub fn try_load() -> Result<Self> {
         // load the package from the ./contracts folder
-        let full_path = format!(
-            "{}/{}",
-            SNARKVM_CONTRACTS_FOLDER, SNARKVM_CONTRACTS_BUILD_FOLDER
-        );
+        let full_path = format!("{}",SNARKVM_CONTRACTS_BUILD_FOLDER);
         let package = Package::open(full_path.as_ref())?;
 
         Ok(Self { package })
