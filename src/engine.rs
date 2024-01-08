@@ -8,12 +8,15 @@ const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:3030";
 
 type Result<T> = core::result::Result<T, Box<dyn error::Error>>;
 
+/// A smart contract's function definition.
+/// It is composed of the function identifier and its arguments.
 pub struct FunctionDef {
     function: Identifier<Testnet3>,
     inputs: Vec<Value<Testnet3>>,
 }
 
 impl FunctionDef {
+    /// Attempts to create a `FucntionDef` from its identifier and arguments
     pub fn try_from(name: &str, args: Vec<&str>) -> Result<Self> {
         Ok(Self {
             function: Identifier::from_str(name)?,
@@ -25,11 +28,14 @@ impl FunctionDef {
     }
 }
 
+/// Main component to interact with smart contracts
 pub struct Engine {
     package: Package<Testnet3>,
 }
 
 impl Engine {
+    /// Attempts to load the engine from the ./contracts folder.
+    /// The ./contracts/build folder must be present as well with the compiled code.
     pub fn try_load() -> Result<Self> {
         // load the package from the ./contracts folder
         let full_path = format!("{}",SNARKVM_CONTRACTS_BUILD_FOLDER);
@@ -38,6 +44,9 @@ impl Engine {
         Ok(Self { package })
     }
 
+    /// Executes a given `FunctionDef`.
+    /// The private key of the sender must be supplied.
+    /// The response and transaction objects are returned.
     pub fn execute(
         &self,
         def: FunctionDef,
