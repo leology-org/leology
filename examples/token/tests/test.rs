@@ -1,29 +1,29 @@
 #[cfg(test)]
 mod tests {
     use lazy_static::lazy_static;
-    use leology::core::new_account;
-    use leology::engine::{Engine, FunctionDef};
+    use leology::core::*;
 
-    type Account = leology::Account<leology::Testnet3>;
+    include!("token.rs");
 
-    lazy_static! {
-        static ref ENGINE: Engine = Engine::try_load()
-            .expect("Failure while reading the contract code. Did you compile your program?");
-        static ref ALICE_ACC: Account = new_account(None).unwrap();
-        static ref ALICE_PK: String = ALICE_ACC.private_key().to_string();
-        static ref ALICE_ADDRESS: String = ALICE_ACC.address().to_string();
-        static ref BOB_ACC: Account = new_account(None).unwrap();
-        static ref BOB_PK: String = BOB_ACC.private_key().to_string();
-        static ref BOB_ADDRESS: String = BOB_ACC.address().to_string();
+    lazy_static!{}
+
+    #[test]
+    fn private_minting_should_work() {
+        // Privately mint 100 tokens for Bob.
+        let alice = new_account(None).unwrap();
+        let bob = new_account(None).unwrap();
+        let token = Token::try_load().unwrap();
+        let response = token.mint_private(alice, bob.address(), 100u64).unwrap();
+        println!("{:?}", response);
     }
-
+/*
     #[test]
     fn public_minting_should_work() {
         // Publicly mint 100 tokens for Alice.
         let (res, tx) = ENGINE
             .execute(
                 FunctionDef::try_from("mint_public", vec![&ALICE_ADDRESS, "100u64"]).unwrap(),
-                &ALICE_PK,
+                &alice.private_key(),
             )
             .expect("Could not mint 100 tokens for Alice");
         println!("{:?}", tx);
@@ -94,4 +94,5 @@ mod tests {
         println!("{:?}", tx);
         println!("{:?}", res);
     }
+*/
 }

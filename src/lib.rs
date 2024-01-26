@@ -9,6 +9,10 @@
 //!
 
 pub mod core;
-pub mod engine;
+pub mod bindings;
 pub use snarkos_account::Account;
 pub use snarkvm::console::network::Testnet3;
+pub use snarkvm::circuit::AleoV0 as Aleo;
+pub use snarkvm::package::Package;
+pub use snarkvm::ledger::block::Transaction;
+pub use snarkvm::prelude::*;
