@@ -13,8 +13,23 @@ mod tests {
         let alice = new_account(None).unwrap();
         let bob = new_account(None).unwrap();
         let token = Token::try_load().unwrap();
-        let response = token.mint_private(alice, bob.address(), 100u64).unwrap();
-        println!("{:?}", response);
+        let record = token.mint_private(&alice, bob.address(), 100u64).unwrap();
+        println!("{:?}", record.amount());
+        println!("{:#?}", record);
+        assert_eq!(record.amount(), 100u64);
+    }
+    #[test]
+    fn private_to_private_transfer_should_work() {
+        let alice = new_account(None).unwrap();
+        let bob = new_account(None).unwrap();
+        let token = Token::try_load().unwrap();
+        let record = token.mint_private(&alice, bob.address(), 100u64).unwrap();
+        assert_eq!(record.amount(), 100u64);
+        let (remaining, transferred) = token.transfer_private(&bob, record, alice.address(), 20u64).unwrap();
+        println!("{:?}", remaining.amount());
+        println!("{:?}", transferred.amount());
+        assert_eq!(remaining.amount(), 80u64);
+        assert_eq!(transferred.amount(), 20u64)
     }
 /*
     #[test]
@@ -26,19 +41,6 @@ mod tests {
                 &alice.private_key(),
             )
             .expect("Could not mint 100 tokens for Alice");
-        println!("{:?}", tx);
-        println!("{:?}", res);
-    }
-
-    #[test]
-    fn private_minting_should_work() {
-        // Privately mint 100 tokens for Bob.
-        let (res, tx) = ENGINE
-            .execute(
-                FunctionDef::try_from("mint_private", vec![&BOB_ADDRESS, "100u64"]).unwrap(),
-                &BOB_PK,
-            )
-            .expect("Could not mint 100 tokens for Bob");
         println!("{:?}", tx);
         println!("{:?}", res);
     }
@@ -66,31 +68,6 @@ mod tests {
                 &ALICE_PK,
             )
             .expect("Could not perform the public-to-private transfer from Alice to Bob");
-        println!("{:?}", tx);
-        println!("{:?}", res);
-    }
-
-    #[test]
-    fn private_to_private_transfer_should_work() {
-        // Publicly transfer 10 tokens from Alice to Bob
-
-        // we firstly mint again to get the UTXO
-        let (res, tx) = ENGINE
-            .execute(
-                FunctionDef::try_from("mint_private", vec![&BOB_ADDRESS, "100u64"]).unwrap(),
-                &BOB_PK,
-            )
-            .expect("Could not mint 100 tokens for Bob");
-        println!("{:?}", tx);
-        println!("{:?}", res);
-        let output = res.outputs().get(0).unwrap().to_string();
-        let (res, tx) = ENGINE
-            .execute(
-                FunctionDef::try_from("transfer_private", vec![&output, &ALICE_ADDRESS, "20u64"])
-                    .unwrap(),
-                &BOB_PK,
-            )
-            .expect("Could not perform the private-to-private transfer from Alice to Bob");
         println!("{:?}", tx);
         println!("{:?}", res);
     }
