@@ -1,0 +1,14 @@
+[package]
+name = "dev"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+colorize = "0.1.0"
+leology = { path = "../.." }
+#leology = { git = "https://github.com/leology-org/leology.git", branch = "main" }
+
+[dev-dependencies]
+lazy_static = "1.4.0"
