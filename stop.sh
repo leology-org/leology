@@ -1,7 +1,7 @@
 #!/bin/bash
 
 total_validators="4"
-mapfile -t validator_indices < <(seq 0 $((total_validators - 1)))
+mapfile -t validator_indices < <(seq 0 $((total_validators - 1))) || true
 
 # Separate the command to avoid masking its return value
 if ! tmux kill-session -t devnet; then
