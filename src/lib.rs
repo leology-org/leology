@@ -8,6 +8,8 @@
 //! - Aleo RPC support
 //!
 
+#![feature(min_specialization)]
+
 pub mod account;
 pub mod api;
 pub mod bindings;

@@ -1,8 +1,4 @@
-use leology::{
-    deployment_cost, generate_bindings, Account, Deployment, Nw, Package, Transaction, DEFAULT_ENDPOINT, VM,
-};
-
-generate_bindings! {
+leology::generate_bindings! {
     Dev, {
         [
         { create_record, (to: Address<Nw>, number: u64), (Rec) },
