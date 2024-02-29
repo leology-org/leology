@@ -1,4 +1,4 @@
-workspace = { members = ["examples/token"] }
+workspace = { members = ["examples/token", "examples/dev"] }
 [package]
 name = "leology"
 version = "0.1.0"
@@ -10,8 +10,13 @@ edition = "2021"
 clap = { version = "4.4.8", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 rand = "0.8.5"
-snarkvm = { git = "https://github.com/AleoHQ/snarkVM", branch = "mainnet" }
-snarkvm-console = { git = "https://github.com/AleoHQ/snarkVM", branch = "mainnet" }
+# snarkvm = { git = "https://github.com/AleoHQ/snarkVM", branch = "testnet3" }
+# snarkvm-console = { git = "https://github.com/AleoHQ/snarkVM", branch = "testnet3" }
+
+# use snarkvm and snarkvm-console from local ../snarkvm and ../snarkvm/console
+snarkvm = { path = "../snarkvm" }
+snarkvm-console = { path = "../snarkvm/console" }
+
 anyhow = "1.0.75"
 rand_chacha = "0.3.1"
 reqwest = "0.11.22"

@@ -1,16 +1,15 @@
-pub use rand;
-pub use ureq;
-pub use indexmap::IndexMap;
-pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
-pub use snarkvm::ledger::store::ConsensusStore;
-pub use snarkvm::ledger::store::ConsensusStorage;
-pub use snarkvm::ledger::query::*;
-pub use snarkvm::console::program::*;
-pub use snarkvm::circuit::AleoV0;
-pub use aleo_std::StorageMode;
-pub use std::path::{Path, PathBuf};
 use crate::*;
-
+pub use aleo_std::StorageMode;
+pub use indexmap::IndexMap;
+pub use rand;
+pub use snarkvm::circuit::AleoV0;
+pub use snarkvm::console::program::*;
+pub use snarkvm::ledger::query::*;
+pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
+pub use snarkvm::ledger::store::ConsensusStorage;
+pub use snarkvm::ledger::store::ConsensusStore;
+pub use std::path::{Path, PathBuf};
+pub use ureq;
 
 pub trait ToValue<N: Network> {
     fn to_value(&self) -> Value<N>;
@@ -28,11 +27,9 @@ impl ToValue<Nw> for Address<Nw> {
 impl ToValue<Nw> for Entry<Nw, Plaintext<Nw>> {
     fn to_value(&self) -> Value<Nw> {
         match self {
-            Entry::Public(entry) |
-            Entry::Private(entry) |
-            Entry::Constant(entry) => {
+            Entry::Public(entry) | Entry::Private(entry) | Entry::Constant(entry) => {
                 Value::Plaintext(entry.clone())
-            },
+            }
         }
     }
 }
@@ -97,14 +94,16 @@ pub fn load_program(
 /// Fetch the program from the given endpoint.
 pub fn fetch_program(program_id: &ProgramID<Nw>, endpoint: &str) -> Result<Program<Nw>> {
     // Send a request to the query node.
-    let response = ureq::get(&format!("{endpoint}/mainnet/program/{program_id}")).call();
+    let response = ureq::get(&format!("{endpoint}/testnet3/program/{program_id}")).call();
 
     // Deserialize the program.
     match response {
         Ok(response) => response.into_json().map_err(|err| err.into()),
         Err(err) => match err {
             ureq::Error::Status(_status, response) => {
-                bail!(response.into_string().unwrap_or("Response too large!".to_owned()))
+                bail!(response
+                    .into_string()
+                    .unwrap_or("Response too large!".to_owned()))
             }
             err => bail!(err),
         },
@@ -166,7 +165,8 @@ macro_rules! generate_bindings {
 
                 let transaction = {
                     let rng = &mut rand::thread_rng();
-                    let (minimum_deployment_cost, (_, _, _)) = deployment_cost(&deployment)?;
+                    // let (minimum_deployment_cost, (_, _, _)) = deployment_cost(&deployment)?;
+                    let (minimum_deployment_cost, (_, _)) = deployment_cost(&deployment)?;
                     let fee_authorization = vm.authorize_fee_public(
                         deployer.private_key(),
                         minimum_deployment_cost,
@@ -186,7 +186,7 @@ macro_rules! generate_bindings {
                 ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
 
                 // Send the deployment request to the local development node.
-                match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
+                match ureq::post("http://127.0.0.1:3030/testnet3/transaction/broadcast").send_json(&transaction) {
                     Ok(id) => {
                         // Remove the quotes from the response.
                         let response_string = id.into_string()?.trim_matches('\"').to_string();
@@ -229,7 +229,7 @@ macro_rules! generate_bindings {
                 println!("Executing with package.");
                 let (response, execution, metrics) =
                     self.package.execute::<AleoV0, _>(
-                        DEFAULT_ENDPOINT.parse().unwrap(), 
+                        DEFAULT_ENDPOINT.parse().unwrap(),
                         account.private_key(),
                         function_name,
                         &args,
@@ -253,7 +253,7 @@ macro_rules! generate_bindings {
                 let transaction_id = transaction.id();
                 ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
                 // Send the deployment request to the local development node.
-                match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
+                match ureq::post("http://127.0.0.1:3030/testnet3/transaction/broadcast").send_json(&transaction) {
                     Ok(id) => {
                         // Remove the quotes from the response.
                         let response_string = id.into_string()?.trim_matches('\"').to_string();
@@ -283,4 +283,3 @@ macro_rules! generate_bindings {
         }
     };
 }
-

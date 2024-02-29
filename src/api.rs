@@ -1,19 +1,16 @@
-use std::process::Command;
 use core::str::FromStr;
 use snarkvm::console::{
     account::PrivateKey,
+    network::Testnet3 as Nw,
     prelude::{Environment, Uniform},
-    network::MainnetV0 as Nw,
     types::Field,
 };
-
 
 use anyhow::{anyhow, Result};
 use rand::SeedableRng;
 use rand_chacha::ChaChaRng;
 
-
-use crate::*;
+use crate::Account;
 
 /// Creates a new account with the given seed
 pub fn new_account(seed: Option<String>) -> Result<Account<Nw>> {
@@ -34,4 +31,3 @@ pub fn new_account(seed: Option<String>) -> Result<Account<Nw>> {
     let account = Account::<Nw>::try_from(private_key)?;
     Ok(account)
 }
-
