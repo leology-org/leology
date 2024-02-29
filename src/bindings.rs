@@ -13,17 +13,51 @@ pub use snarkvm::{
 pub use std::path::{Path, PathBuf};
 pub use ureq;
 
+// Define the default endpoint for the development node.
+pub trait FromValue<N: Network> {
+    fn from_value(value: Value<N>) -> Self;
+}
 pub trait ToValue<N: Network> {
     fn to_value(&self) -> Value<N>;
 }
-impl ToValue<Nw> for u64 {
-    fn to_value(&self) -> Value<Nw> {
-        Value::from(Literal::U64(U64::new(*self)))
+
+// Address
+impl FromValue<Nw> for Address<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Address(v), _)) => v,
+            _ => panic!("Wrong type."),
+        }
     }
 }
 impl ToValue<Nw> for Address<Nw> {
     fn to_value(&self) -> Value<Nw> {
         Value::from(Literal::Address(*self))
+    }
+}
+
+// Boolean
+impl ToValue<Nw> for bool {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::Boolean(Boolean::new(*self)))
+    }
+}
+impl FromValue<Nw> for bool {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Boolean(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+
+// Entry
+impl FromValue<Nw> for Entry<Nw, Plaintext<Nw>> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(value) => Entry::Public(value),
+            _ => panic!("Wrong type."),
+        }
     }
 }
 impl ToValue<Nw> for Entry<Nw, Plaintext<Nw>> {
@@ -33,9 +67,108 @@ impl ToValue<Nw> for Entry<Nw, Plaintext<Nw>> {
         }
     }
 }
-pub trait FromValue<N: Network> {
-    fn from_value(value: Value<N>) -> Self;
+
+// Field
+impl ToValue<Nw> for Field<Nw> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::Field(self.clone()))
+    }
 }
+impl FromValue<Nw> for Field<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Field(v), _)) => v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// Group
+impl ToValue<Nw> for Group<Nw> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::Group(self.clone()))
+    }
+}
+impl FromValue<Nw> for Group<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Group(v), _)) => v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+
+// I8
+impl ToValue<Nw> for i8 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::I8(I8::new(*self)))
+    }
+}
+impl FromValue<Nw> for i8 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::I8(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// I16
+impl ToValue<Nw> for i16 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::I16(I16::new(*self)))
+    }
+}
+impl FromValue<Nw> for i16 {
+    default fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::I16(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// I32
+impl ToValue<Nw> for i32 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::I32(I32::new(*self)))
+    }
+}
+impl FromValue<Nw> for i32 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::I32(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// I64
+impl ToValue<Nw> for i64 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::I64(I64::new(*self)))
+    }
+}
+impl FromValue<Nw> for i64 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::I64(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// I128
+impl ToValue<Nw> for i128 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::I128(I128::new(*self)))
+    }
+}
+impl FromValue<Nw> for i128 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::I128(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+
+// Record
 impl FromValue<Nw> for Record<Nw, Plaintext<Nw>> {
     fn from_value(value: Value<Nw>) -> Self {
         match value {
@@ -44,6 +177,97 @@ impl FromValue<Nw> for Record<Nw, Plaintext<Nw>> {
         }
     }
 }
+impl ToValue<Nw> for Record<Nw, Plaintext<Nw>> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::Record(self.clone())
+    }
+}
+// Scalar
+impl ToValue<Nw> for Scalar<Nw> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::Scalar(self.clone()))
+    }
+}
+impl FromValue<Nw> for Scalar<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Scalar(v), _)) => v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// Signature
+impl ToValue<Nw> for Signature<Nw> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::Signature(Box::new(self.clone())))
+    }
+}
+impl FromValue<Nw> for Signature<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::Signature(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// StringType
+impl ToValue<Nw> for StringType<Nw> {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::String(self.clone()))
+    }
+}
+impl FromValue<Nw> for StringType<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::String(v), _)) => v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+
+// U8
+impl ToValue<Nw> for u8 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::U8(U8::new(*self)))
+    }
+}
+impl FromValue<Nw> for u8 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::U8(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// U16
+impl ToValue<Nw> for u16 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::U16(U16::new(*self)))
+    }
+}
+impl FromValue<Nw> for u16 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::U16(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// U32
+impl ToValue<Nw> for u32 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::U32(U32::new(*self)))
+    }
+}
+impl FromValue<Nw> for u32 {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Plaintext(Plaintext::Literal(Literal::U32(v), _)) => *v,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
+// U64
 impl FromValue<Nw> for u64 {
     fn from_value(value: Value<Nw>) -> Self {
         match value {
@@ -52,10 +276,22 @@ impl FromValue<Nw> for u64 {
         }
     }
 }
-impl FromValue<Nw> for Address<Nw> {
+impl ToValue<Nw> for u64 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::U64(U64::new(*self)))
+    }
+}
+
+// U128
+impl ToValue<Nw> for u128 {
+    fn to_value(&self) -> Value<Nw> {
+        Value::from(Literal::U128(U128::new(*self)))
+    }
+}
+impl FromValue<Nw> for u128 {
     fn from_value(value: Value<Nw>) -> Self {
         match value {
-            Value::Plaintext(Plaintext::Literal(Literal::Address(v), _)) => v,
+            Value::Plaintext(Plaintext::Literal(Literal::U128(v), _)) => *v,
             _ => panic!("Wrong type."),
         }
     }
