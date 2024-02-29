@@ -116,6 +116,29 @@ pub fn initialize_vm() -> Result<VM<Nw, ConsensusMemory<Nw>>> {
     let vm = VM::from(store)?;
     Ok(vm)
 }
+fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
+    let transaction_id = transaction.id();
+    ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
+    // Send the deployment request to the local development node.
+    match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
+        Ok(id) => {
+            // Remove the quotes from the response.
+            let response_string = id.into_string()?.trim_matches('\"').to_string();
+            ensure!( response_string == transaction_id.to_string(), "The response does not match the transaction id. ({response_string} != {transaction_id})");
+            println!( "⌛ Execution {transaction_id} has been broadcast to {}.", DEFAULT_ENDPOINT);
+            Ok(response_string)
+        },
+        Err(error) => {
+            let error_message = match error {
+                ureq::Error::Status(code, response) => {
+                    format!("(status code {code}: {:?})", response.into_string()?)
+                }
+                ureq::Error::Transport(err) => format!("({err})"),
+            };
+            bail!( "❌ Failed to broadcast execution to {}: {}", DEFAULT_ENDPOINT, error_message)
+        }
+    };
+}
 #[macro_export]
 macro_rules! generate_bindings {
     ($program_name:ident, {
@@ -179,39 +202,8 @@ macro_rules! generate_bindings {
 
                     Transaction::from_deployment(owner, deployment, fee)?
                 };
+                println("Result of boroadcast deployment: {}", broadcast_transaction(transaction)?);
                 println!("✅ Created deployment transaction for '{}'", deployment_id.to_string());
-                let transaction_id = transaction.id();
-
-                // Ensure the transaction is not a fee transaction.
-                ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
-
-                // Send the deployment request to the local development node.
-                match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
-                    Ok(id) => {
-                        // Remove the quotes from the response.
-                        let response_string = id.into_string()?.trim_matches('\"').to_string();
-                        ensure!(
-                            response_string == transaction_id.to_string(),
-                            "The response does not match the transaction id. ({response_string} != {transaction_id})"
-                            );
-
-                        println!(
-                            "⌛ Deployment {transaction_id} has been broadcast to {}.",
-                            DEFAULT_ENDPOINT
-                            );
-                    }
-                    Err(error) => {
-                        let error_message = match error {
-                            ureq::Error::Status(code, response) => {
-                                format!("(status code {code}: {:?})", response.into_string()?)
-                            }
-                            ureq::Error::Transport(err) => format!("({err})"),
-                        };
-
-                                bail!("❌ Failed to deploy to {}: {}", DEFAULT_ENDPOINT, error_message)
-                    }
-                };
-
                 Ok(Self { package })
             }
             $(
@@ -250,29 +242,7 @@ macro_rules! generate_bindings {
                         Some(Query::from(DEFAULT_ENDPOINT)),
                         rng,
                         )?;
-                let transaction_id = transaction.id();
-                ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
-                // Send the deployment request to the local development node.
-                match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
-                    Ok(id) => {
-                        // Remove the quotes from the response.
-                        let response_string = id.into_string()?.trim_matches('\"').to_string();
-                        ensure!( response_string == transaction_id.to_string(), "The response does not match the transaction id. ({response_string} != {transaction_id})");
-
-                        println!( "⌛ Execution {transaction_id} has been broadcast to {}.", DEFAULT_ENDPOINT);
-                    },
-                    Err(error) => {
-                        let error_message = match error {
-                            ureq::Error::Status(code, response) => {
-                                format!("(status code {code}: {:?})", response.into_string()?)
-                            }
-                            ureq::Error::Transport(err) => format!("({err})"),
-                        };
-                        bail!( "❌ Failed to broadcast execution to {}: {}", DEFAULT_ENDPOINT, error_message)
-                    }
-                };
-
-
+                println!("Response from transaction broadcast: {}", broadcast_transaction(transaction)?);
                 Ok(($(
                     <$output_type>::from_value(outputs_iter.next().unwrap().clone())
                 ),*))
