@@ -1,4 +1,3 @@
-workspace = { members = ["examples/token", "examples/dev"] }
 [package]
 name = "leology"
 version = "0.1.0"
@@ -25,3 +24,8 @@ colored = "2.1.0"
 ureq = "2.9.6"
 indexmap = "2.2.3"
 aleo-std = "0.1.24"
+[lib]
+crate-type = ["cdylib"]
+
+#[cfg(test)]
+workspace = { members = ["examples/token", "examples/dev"] }
