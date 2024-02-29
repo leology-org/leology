@@ -2,12 +2,14 @@ use crate::*;
 pub use aleo_std::StorageMode;
 pub use indexmap::IndexMap;
 pub use rand;
-pub use snarkvm::circuit::AleoV0;
-pub use snarkvm::console::program::*;
-pub use snarkvm::ledger::query::*;
-pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
-pub use snarkvm::ledger::store::ConsensusStorage;
-pub use snarkvm::ledger::store::ConsensusStore;
+pub use snarkvm::{
+    circuit::AleoV0,
+    console::program::*,
+    ledger::{
+        query::*,
+        store::{helpers::memory::ConsensusMemory, ConsensusStorage, ConsensusStore},
+    },
+};
 pub use std::path::{Path, PathBuf};
 pub use ureq;
 
@@ -27,9 +29,7 @@ impl ToValue<Nw> for Address<Nw> {
 impl ToValue<Nw> for Entry<Nw, Plaintext<Nw>> {
     fn to_value(&self) -> Value<Nw> {
         match self {
-            Entry::Public(entry) | Entry::Private(entry) | Entry::Constant(entry) => {
-                Value::Plaintext(entry.clone())
-            }
+            Entry::Public(entry) | Entry::Private(entry) | Entry::Constant(entry) => Value::Plaintext(entry.clone()),
         }
     }
 }
@@ -62,11 +62,7 @@ impl FromValue<Nw> for Address<Nw> {
 }
 
 /// A helper function to recursively load the program and all of its imports into the process.
-pub fn load_program(
-    endpoint: &str,
-    process: &mut Process<Nw>,
-    program_id: &ProgramID<Nw>,
-) -> Result<()> {
+pub fn load_program(endpoint: &str, process: &mut Process<Nw>, program_id: &ProgramID<Nw>) -> Result<()> {
     // Fetch the program.
     let program = fetch_program(program_id, endpoint)?;
 
@@ -101,9 +97,7 @@ pub fn fetch_program(program_id: &ProgramID<Nw>, endpoint: &str) -> Result<Progr
         Ok(response) => response.into_json().map_err(|err| err.into()),
         Err(err) => match err {
             ureq::Error::Status(_status, response) => {
-                bail!(response
-                    .into_string()
-                    .unwrap_or("Response too large!".to_owned()))
+                bail!(response.into_string().unwrap_or("Response too large!".to_owned()))
             }
             err => bail!(err),
         },
@@ -216,9 +210,9 @@ macro_rules! generate_bindings {
             }
             $(
             pub fn $function_name(&self,
-                                  vm: &VM<Nw, ConsensusMemory<Nw>>,
-                                  account: &Account<Nw>,
-                                  $($input_name: $input_type),*) -> Result<($($output_type),*), Error> {
+                                vm: &VM<Nw, ConsensusMemory<Nw>>,
+                                account: &Account<Nw>,
+                                $($input_name: $input_type),*) -> Result<($($output_type),*), Error> {
                 let args: Vec<Value<Nw>> = vec![
                     $(($input_name).to_value()),*
                 ];

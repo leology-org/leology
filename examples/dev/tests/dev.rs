@@ -1,12 +1,6 @@
-use leology::deployment_cost;
-use leology::generate_bindings;
-use leology::Account;
-use leology::Deployment;
-use leology::Nw;
-use leology::Package;
-use leology::Transaction;
-use leology::DEFAULT_ENDPOINT;
-use leology::VM;
+use leology::{
+    deployment_cost, generate_bindings, Account, Deployment, Nw, Package, Transaction, DEFAULT_ENDPOINT, VM,
+};
 
 generate_bindings! {
     Dev, {

@@ -13,10 +13,7 @@ pub mod api;
 pub mod bindings;
 pub use account::Account;
 pub use api::new_account;
-pub use snarkvm::circuit::AleoV0 as Aleo;
-pub use snarkvm::ledger::block::Transaction;
-pub use snarkvm::package::Package;
-pub use snarkvm::prelude::*;
+pub use snarkvm::{circuit::AleoV0 as Aleo, ledger::block::Transaction, package::Package, prelude::*};
 
 pub use snarkvm::console::network::Testnet3 as Nw;
 pub const SNARKVM_CONTRACTS_BUILD_FOLDER: &str = "build";

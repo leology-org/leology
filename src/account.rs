@@ -52,29 +52,17 @@ impl<N: Network> Account<N> {
 
 impl<N: Network> Account<N> {
     /// Returns a signature for the given message (as field elements), using the account private key.
-    pub fn sign<R: Rng + CryptoRng>(
-        &self,
-        message: &[Field<N>],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
+    pub fn sign<R: Rng + CryptoRng>(&self, message: &[Field<N>], rng: &mut R) -> Result<Signature<N>> {
         Signature::sign(&self.private_key, message, rng)
     }
 
     /// Returns a signature for the given message (as bytes), using the account private key.
-    pub fn sign_bytes<R: Rng + CryptoRng>(
-        &self,
-        message: &[u8],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
+    pub fn sign_bytes<R: Rng + CryptoRng>(&self, message: &[u8], rng: &mut R) -> Result<Signature<N>> {
         Signature::sign_bytes(&self.private_key, message, rng)
     }
 
     /// Returns a signature for the given message (as bits), using the account private key.
-    pub fn sign_bits<R: Rng + CryptoRng>(
-        &self,
-        message: &[bool],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
+    pub fn sign_bits<R: Rng + CryptoRng>(&self, message: &[bool], rng: &mut R) -> Result<Signature<N>> {
         Signature::sign_bits(&self.private_key, message, rng)
     }
 
@@ -110,11 +98,7 @@ impl<N: Network> TryFrom<&PrivateKey<N>> for Account<N> {
     fn try_from(private_key: &PrivateKey<N>) -> Result<Self, Self::Error> {
         let view_key = ViewKey::try_from(private_key)?;
         let address = view_key.to_address();
-        Ok(Self {
-            private_key: *private_key,
-            view_key,
-            address,
-        })
+        Ok(Self { private_key: *private_key, view_key, address })
     }
 }
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-colorize = "0.1.0"
+# colorize = "0.1.0"
 leology = { path = "../.." }
 #leology = { git = "https://github.com/leology-org/leology.git", branch = "main" }
 
