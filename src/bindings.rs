@@ -10,6 +10,8 @@ pub use snarkvm::ledger::store::ConsensusStorage;
 pub use snarkvm::ledger::store::ConsensusStore;
 pub use std::path::{Path, PathBuf};
 pub use ureq;
+pub use std::time::Duration;
+pub use std::thread::sleep;
 
 pub trait ToValue<N: Network> {
     fn to_value(&self) -> Value<N>;
@@ -154,6 +156,7 @@ pub fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
             // Remove the quotes from the response.
             let response_string = id.into_string()?.trim_matches('\"').to_string();
             ensure!( response_string == transaction_id.to_string(), "The response does not match the transaction id. ({response_string} != {transaction_id})");
+            sleep(Duration::from_secs(40));
             println!( "⌛ Execution {transaction_id} has been broadcast to {}.", DEFAULT_ENDPOINT);
             Ok(response_string)
         },
@@ -246,8 +249,12 @@ macro_rules! generate_bindings {
                 let args: Vec<Value<Nw>> = vec![
                     $(($input_name).to_value()),*
                 ];
+                let rng = &mut rand::thread_rng();
+                let (response, execution, metrics) =
+                    self.package.execute::<AleoV0, _>("http://127.0.0.1:3030".to_string(),
+                                                 account.private_key(), Identifier::from_str("create_record").unwrap(),
+                                                 &args, rng).unwrap();
                 println!("Transaction of function {}:", stringify!($function_name));
-                // Execute transaction with package
                 let query = "http://127.0.0.1:3030".to_string();
                 let private_key = account.private_key();
                 let priority_fee = 0;
@@ -286,16 +293,6 @@ macro_rules! generate_bindings {
                 }
                 println!("✅ Created execution transaction for '{}'", locator.to_string());
                 println!("Response from transaction broadcast: {}", broadcast_transaction(transaction)?);
-
-                println!("Executing with package to get outputs.");
-                let rng = &mut rand::thread_rng();
-                let (response, execution, metrics) =
-                    self.package.execute::<AleoV0, _>(
-                        DEFAULT_ENDPOINT.parse().unwrap(),
-                        account.private_key(),
-                        Identifier::try_from(function_name)?,
-                        &args,
-                        rng).expect("Execution error");
                 let mut outputs_iter = response.outputs().into_iter();
                 
 
