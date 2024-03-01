@@ -3,8 +3,6 @@ name = "dev"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-
 [dependencies]
 colorize = "0.1.0"
 leology = { path = "../.." }

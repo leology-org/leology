@@ -1,16 +1,15 @@
-pub use rand;
-pub use ureq;
-pub use indexmap::IndexMap;
-pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
-pub use snarkvm::ledger::store::ConsensusStore;
-pub use snarkvm::ledger::store::ConsensusStorage;
-pub use snarkvm::ledger::query::*;
-pub use snarkvm::console::program::*;
-pub use snarkvm::circuit::AleoV0;
-pub use aleo_std::StorageMode;
-pub use std::path::{Path, PathBuf};
 use crate::*;
-
+pub use aleo_std::StorageMode;
+pub use indexmap::IndexMap;
+pub use rand;
+pub use snarkvm::circuit::AleoV0;
+pub use snarkvm::console::program::*;
+pub use snarkvm::ledger::query::*;
+pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
+pub use snarkvm::ledger::store::ConsensusStorage;
+pub use snarkvm::ledger::store::ConsensusStore;
+pub use std::path::{Path, PathBuf};
+pub use ureq;
 
 pub trait ToValue<N: Network> {
     fn to_value(&self) -> Value<N>;
@@ -28,11 +27,9 @@ impl ToValue<Nw> for Address<Nw> {
 impl ToValue<Nw> for Entry<Nw, Plaintext<Nw>> {
     fn to_value(&self) -> Value<Nw> {
         match self {
-            Entry::Public(entry) |
-            Entry::Private(entry) |
-            Entry::Constant(entry) => {
+            Entry::Public(entry) | Entry::Private(entry) | Entry::Constant(entry) => {
                 Value::Plaintext(entry.clone())
-            },
+            }
         }
     }
 }
@@ -97,10 +94,33 @@ pub fn load_program(
 /// Fetch the program from the given endpoint.
 pub fn fetch_program(program_id: &ProgramID<Nw>, endpoint: &str) -> Result<Program<Nw>> {
     // Send a request to the query node.
-    let response = ureq::get(&format!("{endpoint}/mainnet/program/{program_id}")).call();
+    let response = ureq::get("http://127.0.0.1:3030/testnet3/program/dev.aleo").call();
 
     // Deserialize the program.
     match response {
+        Ok(response) => response.into_json().map_err(|err| err.into()),
+        Err(err) => match err {
+            ureq::Error::Status(_status, response) => {
+                bail!(response
+                    .into_string()
+                    .unwrap_or("Response too large!".to_owned()))
+            }
+            err => bail!(err),
+        },
+    }
+}
+/// Fetch the public balance in microcredits associated with the address from the given endpoint.
+pub fn get_public_balance(address: &Address<Nw>, endpoint: &str) -> Result<u64> {
+    // Initialize the program id and account identifier.
+    let credits = ProgramID::<Nw>::from_str("credits.aleo")?;
+    let account_mapping = Identifier::<Nw>::from_str("account")?;
+
+    // Send a request to the query node.
+    let response =
+        ureq::get(&format!("{endpoint}/testnet3/program/{credits}/mapping/{account_mapping}/{address}")).call();
+
+    // Deserialize the balance.
+    let balance: Result<Option<Value<Nw>>> = match response {
         Ok(response) => response.into_json().map_err(|err| err.into()),
         Err(err) => match err {
             ureq::Error::Status(_status, response) => {
@@ -108,6 +128,14 @@ pub fn fetch_program(program_id: &ProgramID<Nw>, endpoint: &str) -> Result<Progr
             }
             err => bail!(err),
         },
+    };
+
+    // Return the balance in microcredits.
+    match balance {
+        Ok(Some(Value::Plaintext(Plaintext::Literal(Literal::<Nw>::U64(amount), _)))) => Ok(*amount),
+        Ok(None) => Ok(0),
+        Ok(Some(..)) => bail!("Failed to deserialize balance for {address}"),
+        Err(err) => bail!("Failed to fetch balance for {address}: {err}"),
     }
 }
 
@@ -116,12 +144,13 @@ pub fn initialize_vm() -> Result<VM<Nw, ConsensusMemory<Nw>>> {
     let vm = VM::from(store)?;
     Ok(vm)
 }
-fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
+pub fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
     let transaction_id = transaction.id();
     ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
     // Send the deployment request to the local development node.
-    match ureq::post("http://127.0.0.1:3030/mainnet/transaction/broadcast").send_json(&transaction) {
+    match ureq::post("http://127.0.0.1:3030/testnet3/transaction/broadcast").send_json(&transaction) {
         Ok(id) => {
+            dbg!(&id);
             // Remove the quotes from the response.
             let response_string = id.into_string()?.trim_matches('\"').to_string();
             ensure!( response_string == transaction_id.to_string(), "The response does not match the transaction id. ({response_string} != {transaction_id})");
@@ -135,9 +164,9 @@ fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
                 }
                 ureq::Error::Transport(err) => format!("({err})"),
             };
-            bail!( "❌ Failed to broadcast execution to {}: {}", DEFAULT_ENDPOINT, error_message)
+            bail!("❌ Failed to broadcast execution to {}: {}", DEFAULT_ENDPOINT, error_message)
         }
-    };
+    }
 }
 #[macro_export]
 macro_rules! generate_bindings {
@@ -180,7 +209,7 @@ macro_rules! generate_bindings {
             pub package: Package<Nw>,
         }
         impl $program_name {
-            pub fn new(vm: &mut VM<Nw, ConsensusMemory<Nw>>, deployer: &Account<Nw>) -> Result<Self> {
+            pub fn new(deployer: &Account<Nw>) -> Result<Self> {
                 let query = Query::from(DEFAULT_ENDPOINT);
                 let package = Package::open("build".as_ref())?;
                 let deployment: Deployment<Nw> = package.deploy::<AleoV0>(None)
@@ -189,7 +218,9 @@ macro_rules! generate_bindings {
 
                 let transaction = {
                     let rng = &mut rand::thread_rng();
-                    let (minimum_deployment_cost, (_, _, _)) = deployment_cost(&deployment)?;
+                    let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(StorageMode::Production)?;
+                    let vm = VM::from(store)?;
+                    let (minimum_deployment_cost, (_, _)) = deployment_cost(&deployment)?;
                     let fee_authorization = vm.authorize_fee_public(
                         deployer.private_key(),
                         minimum_deployment_cost,
@@ -202,55 +233,77 @@ macro_rules! generate_bindings {
 
                     Transaction::from_deployment(owner, deployment, fee)?
                 };
-                println("Result of boroadcast deployment: {}", broadcast_transaction(transaction)?);
+                println!("Result of boroadcast deployment: {}", broadcast_transaction(transaction)?);
                 println!("✅ Created deployment transaction for '{}'", deployment_id.to_string());
                 Ok(Self { package })
             }
             $(
             pub fn $function_name(&self,
-                                  vm: &VM<Nw, ConsensusMemory<Nw>>,
                                   account: &Account<Nw>,
                                   $($input_name: $input_type),*) -> Result<($($output_type),*), Error> {
+                let program_name = stringify!($program_name).to_string();
+                let function_name = stringify!($function_name).to_string();
                 let args: Vec<Value<Nw>> = vec![
                     $(($input_name).to_value()),*
                 ];
                 println!("Transaction of function {}:", stringify!($function_name));
                 // Execute transaction with package
+                let query = "http://127.0.0.1:3030".to_string();
+                let private_key = account.private_key();
+                let priority_fee = 0;
+                //let locator = Locator::<Nw>::from_str(&format!("{}/{}", &program_name, &function_name))?;
+                let locator = Locator::<Nw>::new(ProgramID::try_from("dev.aleo")?, Identifier::from_str(&function_name)?);
+                let transaction = {
+                    let rng = &mut rand::thread_rng();
+                    let storage_mode = StorageMode::Production;
+                    let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(storage_mode)?;
+                    let vm = VM::from(store)?;
+                    let program_id = ProgramID::try_from("dev.aleo")?;
+                    let function_id = Identifier::from_str(&function_name).unwrap();
+                    load_program(&query, &mut vm.process().write(), &program_id)?;
+                    let fee_record = None;
+                    vm.execute(
+                        &private_key,
+                        (program_id, function_id),
+                        args.iter(),
+                        fee_record,
+                        priority_fee,
+                        Some(Query::from(&query)),
+                        rng,)?
+                };
+                let public_balance = get_public_balance(&account.address(), &query)?;
+                let storage_cost = transaction
+                    .execution()
+                    .ok_or_else(|| anyhow!("The transaction does not contain an execution"))?
+                    .size_in_bytes()?;
+                let base_fee = storage_cost.saturating_add(priority_fee);
+                if public_balance < base_fee {
+                    bail!(
+                        "❌ The public balance of {} is insufficient to pay the base fee for `{}`",
+                        public_balance,
+                        locator.to_string()
+                        );
+                }
+                println!("✅ Created execution transaction for '{}'", locator.to_string());
+                println!("Response from transaction broadcast: {}", broadcast_transaction(transaction)?);
+
+                println!("Executing with package to get outputs.");
                 let rng = &mut rand::thread_rng();
-                let function_name = Identifier::try_from(stringify!($function_name)).expect("Could not make identifier.");
-                println!("Executing with package.");
                 let (response, execution, metrics) =
                     self.package.execute::<AleoV0, _>(
-                        DEFAULT_ENDPOINT.parse().unwrap(), 
+                        DEFAULT_ENDPOINT.parse().unwrap(),
                         account.private_key(),
-                        function_name,
+                        Identifier::try_from(function_name)?,
                         &args,
                         rng).expect("Execution error");
                 let mut outputs_iter = response.outputs().into_iter();
-                // Broadcast transaction
-                println!("Executing with vm.");
-                //let program_name_str = format!("{}.aleo", stringify!($program_name));
-                let program_name_str = "dev.aleo";
-                let program_id = ProgramID::from_str(&program_name_str).unwrap();
-//                let function_id = FunctionID::from_str(stringify!($program_name)).unwrap();
-                let transaction = vm.execute(
-                        account.private_key(),
-                        (program_id, stringify!($function_name).to_string()),
-                        args.iter(),
-                        None,
-                        0,
-                        Some(Query::from(DEFAULT_ENDPOINT)),
-                        rng,
-                        )?;
-                println!("Response from transaction broadcast: {}", broadcast_transaction(transaction)?);
+                
+
                 Ok(($(
                     <$output_type>::from_value(outputs_iter.next().unwrap().clone())
                 ),*))
-
-
             }
             )*
         }
     };
 }
-
