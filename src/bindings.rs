@@ -8,6 +8,8 @@ pub use snarkvm::ledger::query::*;
 pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
 pub use snarkvm::ledger::store::ConsensusStorage;
 pub use snarkvm::ledger::store::ConsensusStore;
+
+pub use snarkvm::ledger::block::Output;
 pub use std::path::{Path, PathBuf};
 pub use ureq;
 pub use std::time::Duration;
@@ -171,6 +173,18 @@ pub fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
         }
     }
 }
+pub fn make_outputs(execution: &Execution<Nw>, account: Account<Nw>) {
+                let mut transitions = execution.transitions();
+                let outputs_iter = transitions.next().unwrap().outputs().iter();
+                let outputs: Vec<Value<Nw>> = outputs_iter.filter_map(|output| {
+                    match output {
+                      Output::Constant(_, plaintext) | Output::Public(_, plaintext) => Some(Value::Plaintext(plaintext.clone().unwrap())),
+                      Output::Record(_, _, record_ciphertext) => Some(Value::Record(record_ciphertext.clone().unwrap().decrypt(account.view_key()).unwrap())),
+                      _ => None,
+                    }
+                }).collect();
+
+}
 #[macro_export]
 macro_rules! generate_bindings {
     ($program_name:ident, {
@@ -202,8 +216,9 @@ macro_rules! generate_bindings {
                 $record_name { record }
             }
             $(pub fn $record_field(&self) -> $record_field_type {
+                let field = &Identifier::try_from(stringify!($record_field)).unwrap();
                 let entry = self.record.data()
-                    .get(&Identifier::try_from(stringify!($record_field)).unwrap()).unwrap();
+                    .get(field).unwrap();
                 let value = entry.to_value();
                 <$record_field_type>::from_value(value)
             })*
@@ -245,28 +260,24 @@ macro_rules! generate_bindings {
                                   account: &Account<Nw>,
                                   $($input_name: $input_type),*) -> Result<($($output_type),*), Error> {
                 let program_name = stringify!($program_name).to_string();
+                let program_id = ProgramID::try_from("dev.aleo").unwrap();
                 let function_name = stringify!($function_name).to_string();
+                let function_id = Identifier::from_str(&function_name).unwrap();
                 let args: Vec<Value<Nw>> = vec![
                     $(($input_name).to_value()),*
                 ];
                 let rng = &mut rand::thread_rng();
-                let (response, execution, metrics) =
-                    self.package.execute::<AleoV0, _>("http://127.0.0.1:3030".to_string(),
-                                                 account.private_key(), Identifier::from_str("create_record").unwrap(),
-                                                 &args, rng).unwrap();
-                println!("Transaction of function {}:", stringify!($function_name));
+                println!("Transaction of function {}:", function_name);
                 let query = "http://127.0.0.1:3030".to_string();
                 let private_key = account.private_key();
                 let priority_fee = 0;
                 //let locator = Locator::<Nw>::from_str(&format!("{}/{}", &program_name, &function_name))?;
-                let locator = Locator::<Nw>::new(ProgramID::try_from("dev.aleo")?, Identifier::from_str(&function_name)?);
+                let locator = Locator::<Nw>::new(ProgramID::try_from("dev.aleo")?, function_id);
                 let transaction = {
                     let rng = &mut rand::thread_rng();
                     let storage_mode = StorageMode::Production;
                     let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(storage_mode)?;
                     let vm = VM::from(store)?;
-                    let program_id = ProgramID::try_from("dev.aleo")?;
-                    let function_id = Identifier::from_str(&function_name).unwrap();
                     load_program(&query, &mut vm.process().write(), &program_id)?;
                     let fee_record = None;
                     vm.execute(
@@ -292,9 +303,25 @@ macro_rules! generate_bindings {
                         );
                 }
                 println!("✅ Created execution transaction for '{}'", locator.to_string());
-                println!("Response from transaction broadcast: {}", broadcast_transaction(transaction)?);
-                let mut outputs_iter = response.outputs().into_iter();
-                
+                println!("Response from transaction broadcast: {}", broadcast_transaction(transaction.clone())?);
+                let execution = match transaction {
+                    Transaction::Execute(_, execution, _) => execution,
+                    _ => panic!("Not an execution."),
+                };
+                panic!("TODO: fix the return values");
+
+
+                let mut transitions = execution.transitions();
+                let outputs_iter = transitions.next().unwrap().outputs().iter();
+                let outputs: Vec<Value<Nw>> = outputs_iter.filter_map(|output| {
+                    dbg!(output);
+                    match output {
+                      Output::Constant(_, plaintext) | Output::Public(_, plaintext) => Some(Value::Plaintext(plaintext.clone().unwrap())),  
+                      Output::Record(_, _, record_ciphertext) => Some(Value::Record(record_ciphertext.clone().unwrap().decrypt(account.view_key()).unwrap())),
+                      _ => None,
+                    }
+                }).collect();
+                let mut outputs_iter = outputs.iter();
 
                 Ok(($(
                     <$output_type>::from_value(outputs_iter.next().unwrap().clone())

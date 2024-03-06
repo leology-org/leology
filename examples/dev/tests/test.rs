@@ -11,6 +11,7 @@ mod tests {
         //let alice = new_account(Some("0".to_string())).unwrap();
         let alice = Account::try_from("APrivateKey1zkpBjpEgLo4arVUkQmcLdKQMiAKGaHAQVVwmF8HQby8vdYs").unwrap();
         let dev = Dev::new(&alice).unwrap();
+        panic!("TODO: fix return values.");
         let record = dev.create_record(&alice, alice.address(), 10u64).unwrap();
         println!("{:?}", record.owner());
         println!("{:?}", record.number());
