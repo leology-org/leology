@@ -1,4 +1,4 @@
-workspace = { members = ["examples/token"] }
+workspace = { members = ["examples/token", "examples/dev"] }
 [package]
 name = "leology"
 version = "0.1.0"
@@ -7,13 +7,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.4.8", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+clap = { version = "4.5.35", features = ["derive"] }
+tokio = { version = "1.44.1", features = ["full"] }
 rand = "0.8.5"
-snarkvm = "0.16.8"
-snarkvm-console = "0.16.6"
-anyhow = "1.0.75"
+
+anyhow = "1.0.97"
 rand_chacha = "0.3.1"
-snarkos-account = "2.2.4"
-reqwest = "0.11.22"
-serde_json = "1.0.108"
+serde_json = "1.0.140"
+colored = "3.0.0"
+ureq = "2.9.6"
+indexmap = "2.8.0"
+aleo-std = { version = "1.0.1", features = ["storage"] }
+snarkvm = "1.4.0"
+snarkvm-console = "1.4.0"
