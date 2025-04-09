@@ -7,21 +7,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.4.8", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+clap = { version = "4.5.35", features = ["derive"] }
+tokio = { version = "1.44.1", features = ["full"] }
 rand = "0.8.5"
-# snarkvm = { git = "https://github.com/AleoHQ/snarkVM", branch = "testnet3" }
-# snarkvm-console = { git = "https://github.com/AleoHQ/snarkVM", branch = "testnet3" }
 
-# use snarkvm and snarkvm-console from local ../snarkvm and ../snarkvm/console
-snarkvm = { path = "../snarkvm" }
-snarkvm-console = { path = "../snarkvm/console" }
-
-anyhow = "1.0.75"
+anyhow = "1.0.97"
 rand_chacha = "0.3.1"
-reqwest = "0.11.22"
-serde_json = "1.0.108"
-colored = "2.1.0"
+serde_json = "1.0.140"
+colored = "3.0.0"
 ureq = "2.9.6"
-indexmap = "2.2.3"
-aleo-std = "0.1.24"
+indexmap = "2.8.0"
+aleo-std = { version = "1.0.1", features = ["storage"] }
+snarkvm = "1.4.0"
+snarkvm-console = "1.4.0"

@@ -5,16 +5,16 @@ program dev.aleo {
         owner: address,
         number: u64,
     }
-    transition create_record(to: address, number: u64) -> rec {
-        return rec { owner: to, number: number } then finalize(to, number);
+    async transition create_record(to: address, number: u64) -> (rec, Future) {
+        return (rec { owner: to, number: number }, finalize_create_record(to, number));
     }
-    finalize create_record(to: address, number: u64) {
+    async function finalize_create_record(to: address, number: u64) {
         Mapping::set(mapping_number, to, number);
     }
-    transition consume_record(r: rec) {
-        return then finalize(r.owner);
+    async transition consume_record(r: rec) -> Future {
+        return finalize_consume_record(r.owner);
     }
-    finalize consume_record(owner: address) {
+    async function finalize_consume_record(owner: address) {
         Mapping::set(mapping_number, owner, 100u64);
     }
 }

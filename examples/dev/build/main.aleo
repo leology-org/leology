@@ -4,10 +4,9 @@ record rec:
     owner as address.private;
     number as u64.private;
 
-
 mapping mapping_number:
-	key as address.public;
-	value as u64.public;
+    key as address.public;
+    value as u64.public;
 
 function create_record:
     input r0 as address.private;
@@ -21,7 +20,6 @@ finalize create_record:
     input r0 as address.public;
     input r1 as u64.public;
     set r1 into mapping_number[r0];
-
 
 function consume_record:
     input r0 as rec.record;

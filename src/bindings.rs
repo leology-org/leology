@@ -9,11 +9,14 @@ pub use snarkvm::ledger::store::helpers::memory::ConsensusMemory;
 pub use snarkvm::ledger::store::ConsensusStorage;
 pub use snarkvm::ledger::store::ConsensusStore;
 
+pub use snarkvm::ledger::block::Execution;
 pub use snarkvm::ledger::block::Output;
+pub use snarkvm::ledger::block::Transaction;
+pub use snarkvm::ledger::block::Transition;
 pub use std::path::{Path, PathBuf};
-pub use ureq;
-pub use std::time::Duration;
 pub use std::thread::sleep;
+pub use std::time::Duration;
+pub use ureq;
 
 pub trait ToValue<N: Network> {
     fn to_value(&self) -> Value<N>;
@@ -64,6 +67,14 @@ impl FromValue<Nw> for Address<Nw> {
         }
     }
 }
+impl FromValue<Nw> for Future<Nw> {
+    fn from_value(value: Value<Nw>) -> Self {
+        match value {
+            Value::Future(future) => future,
+            _ => panic!("Wrong type."),
+        }
+    }
+}
 
 /// A helper function to recursively load the program and all of its imports into the process.
 pub fn load_program(
@@ -98,7 +109,7 @@ pub fn load_program(
 /// Fetch the program from the given endpoint.
 pub fn fetch_program(program_id: &ProgramID<Nw>, endpoint: &str) -> Result<Program<Nw>> {
     // Send a request to the query node.
-    let response = ureq::get("http://127.0.0.1:3030/testnet3/program/dev.aleo").call();
+    let response = ureq::get("http://127.0.0.1:3030/testnet/program/dev.aleo").call();
 
     // Deserialize the program.
     match response {
@@ -120,15 +131,19 @@ pub fn get_public_balance(address: &Address<Nw>, endpoint: &str) -> Result<u64> 
     let account_mapping = Identifier::<Nw>::from_str("account")?;
 
     // Send a request to the query node.
-    let response =
-        ureq::get(&format!("{endpoint}/testnet3/program/{credits}/mapping/{account_mapping}/{address}")).call();
+    let response = ureq::get(&format!(
+        "{endpoint}/testnet/program/{credits}/mapping/{account_mapping}/{address}"
+    ))
+    .call();
 
     // Deserialize the balance.
     let balance: Result<Option<Value<Nw>>> = match response {
         Ok(response) => response.into_json().map_err(|err| err.into()),
         Err(err) => match err {
             ureq::Error::Status(_status, response) => {
-                bail!(response.into_string().unwrap_or("Response too large!".to_owned()))
+                bail!(response
+                    .into_string()
+                    .unwrap_or("Response too large!".to_owned()))
             }
             err => bail!(err),
         },
@@ -136,7 +151,9 @@ pub fn get_public_balance(address: &Address<Nw>, endpoint: &str) -> Result<u64> 
 
     // Return the balance in microcredits.
     match balance {
-        Ok(Some(Value::Plaintext(Plaintext::Literal(Literal::<Nw>::U64(amount), _)))) => Ok(*amount),
+        Ok(Some(Value::Plaintext(Plaintext::Literal(Literal::<Nw>::U64(amount), _)))) => {
+            Ok(*amount)
+        }
         Ok(None) => Ok(0),
         Ok(Some(..)) => bail!("Failed to deserialize balance for {address}"),
         Err(err) => bail!("Failed to fetch balance for {address}: {err}"),
@@ -150,18 +167,25 @@ pub fn initialize_vm() -> Result<VM<Nw, ConsensusMemory<Nw>>> {
 }
 pub fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
     let transaction_id = transaction.id();
-    ensure!(!transaction.is_fee(), "The transaction is a fee transaction and cannot be broadcast");
+    ensure!(
+        !transaction.is_fee(),
+        "The transaction is a fee transaction and cannot be broadcast"
+    );
     // Send the deployment request to the local development node.
-    match ureq::post("http://127.0.0.1:3030/testnet3/transaction/broadcast").send_json(&transaction) {
+    match ureq::post("http://127.0.0.1:3030/testnet/transaction/broadcast").send_json(&transaction)
+    {
         Ok(id) => {
             dbg!(&id);
             // Remove the quotes from the response.
             let response_string = id.into_string()?.trim_matches('\"').to_string();
             ensure!( response_string == transaction_id.to_string(), "The response does not match the transaction id. ({response_string} != {transaction_id})");
             sleep(Duration::from_secs(40));
-            println!( "⌛ Execution {transaction_id} has been broadcast to {}.", DEFAULT_ENDPOINT);
+            println!(
+                "⌛ Execution {transaction_id} has been broadcast to {}.",
+                DEFAULT_ENDPOINT
+            );
             Ok(response_string)
-        },
+        }
         Err(error) => {
             let error_message = match error {
                 ureq::Error::Status(code, response) => {
@@ -169,21 +193,33 @@ pub fn broadcast_transaction(transaction: Transaction<Nw>) -> Result<String> {
                 }
                 ureq::Error::Transport(err) => format!("({err})"),
             };
-            bail!("❌ Failed to broadcast execution to {}: {}", DEFAULT_ENDPOINT, error_message)
+            bail!(
+                "❌ Failed to broadcast execution to {}: {}",
+                DEFAULT_ENDPOINT,
+                error_message
+            )
         }
     }
 }
 pub fn make_outputs(execution: &Execution<Nw>, account: Account<Nw>) {
-                let mut transitions = execution.transitions();
-                let outputs_iter = transitions.next().unwrap().outputs().iter();
-                let outputs: Vec<Value<Nw>> = outputs_iter.filter_map(|output| {
-                    match output {
-                      Output::Constant(_, plaintext) | Output::Public(_, plaintext) => Some(Value::Plaintext(plaintext.clone().unwrap())),
-                      Output::Record(_, _, record_ciphertext) => Some(Value::Record(record_ciphertext.clone().unwrap().decrypt(account.view_key()).unwrap())),
-                      _ => None,
-                    }
-                }).collect();
-
+    let mut transitions = execution.transitions();
+    let outputs_iter = transitions.next().unwrap().outputs().iter();
+    let outputs: Vec<Value<Nw>> = outputs_iter
+        .filter_map(|output| match output {
+            Output::Constant(_, plaintext) | Output::Public(_, plaintext) => {
+                Some(Value::Plaintext(plaintext.clone().unwrap()))
+            }
+            Output::Record(_, _, record_ciphertext) => Some(Value::Record(
+                record_ciphertext
+                    .clone()
+                    .unwrap()
+                    .decrypt(account.view_key())
+                    .unwrap(),
+            )),
+            Output::Future(_, future) => Some(Value::Future(future.clone().unwrap())),
+            _ => None,
+        })
+        .collect();
 }
 #[macro_export]
 macro_rules! generate_bindings {
@@ -192,6 +228,7 @@ macro_rules! generate_bindings {
         [{$($record_name:ident, ($($record_field:ident : $record_field_type:ty),*) );*}],
     }) => {
         use leology::bindings::*;
+        use leology::Aleo;
         #[derive(Debug)]
         $(pub struct $record_name {
             pub record: Record<Nw, Plaintext<Nw>>,
@@ -230,15 +267,15 @@ macro_rules! generate_bindings {
             pub fn new(deployer: &Account<Nw>) -> Result<Self> {
                 let query = Query::from(DEFAULT_ENDPOINT);
                 let package = Package::open("build".as_ref())?;
-                let deployment: Deployment<Nw> = package.deploy::<AleoV0>(None)
+                let deployment: Deployment<Nw> = package.deploy::<Aleo>(None)
                     .expect("Error in package.deploy.");
                 let deployment_id = deployment.to_deployment_id()?;
 
                 let transaction = {
                     let rng = &mut rand::thread_rng();
-                    let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(StorageMode::Production)?;
+                    let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(0u16)?;
                     let vm = VM::from(store)?;
-                    let (minimum_deployment_cost, (_, _)) = deployment_cost(&deployment)?;
+                    let (minimum_deployment_cost, (_, _, _)) = deployment_cost(&deployment)?;
                     let fee_authorization = vm.authorize_fee_public(
                         deployer.private_key(),
                         minimum_deployment_cost,
@@ -273,9 +310,9 @@ macro_rules! generate_bindings {
                 let priority_fee = 0;
                 //let locator = Locator::<Nw>::from_str(&format!("{}/{}", &program_name, &function_name))?;
                 let locator = Locator::<Nw>::new(ProgramID::try_from("dev.aleo")?, function_id);
-                let transaction = {
+                let transaction: Transaction<Nw> = {
                     let rng = &mut rand::thread_rng();
-                    let storage_mode = StorageMode::Production;
+                    let storage_mode = 0u16;
                     let store = ConsensusStore::<Nw, ConsensusMemory<Nw>>::open(storage_mode)?;
                     let vm = VM::from(store)?;
                     load_program(&query, &mut vm.process().write(), &program_id)?;
@@ -305,19 +342,17 @@ macro_rules! generate_bindings {
                 println!("✅ Created execution transaction for '{}'", locator.to_string());
                 println!("Response from transaction broadcast: {}", broadcast_transaction(transaction.clone())?);
                 let execution = match transaction {
-                    Transaction::Execute(_, execution, _) => execution,
+                    Transaction::Execute(_, _, execution, _) => execution,
                     _ => panic!("Not an execution."),
                 };
-                panic!("TODO: fix the return values");
-
 
                 let mut transitions = execution.transitions();
                 let outputs_iter = transitions.next().unwrap().outputs().iter();
                 let outputs: Vec<Value<Nw>> = outputs_iter.filter_map(|output| {
-                    dbg!(output);
                     match output {
-                      Output::Constant(_, plaintext) | Output::Public(_, plaintext) => Some(Value::Plaintext(plaintext.clone().unwrap())),  
+                      Output::Constant(_, plaintext) | Output::Public(_, plaintext) => Some(Value::Plaintext(plaintext.clone().unwrap())),
                       Output::Record(_, _, record_ciphertext) => Some(Value::Record(record_ciphertext.clone().unwrap().decrypt(account.view_key()).unwrap())),
+                      Output::Future(_, future) => Some(Value::Future(future.clone().unwrap())),
                       _ => None,
                     }
                 }).collect();

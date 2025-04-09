@@ -11,9 +11,9 @@ use leology::VM;
 generate_bindings! {
     Dev, {
         [
-        { create_record, (to: Address<Nw>, number: u64), (Rec) },
-        { consume_record, (record: Rec), () },
+        { create_record, (to: Address<Nw>, number: u64), (Rec, Future<Nw>) },
+        { consume_record, (record: Rec), (Future<Nw>) },
         ],
-        [{ Rec, (owner: Address<Nw>, number: u64) }],
+        [{ Rec, (number: u64) }],
     }
 }

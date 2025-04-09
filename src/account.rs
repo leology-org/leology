@@ -172,23 +172,20 @@ impl<N: Network> Display for Account<N> {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
     use snarkvm::{
-        prelude::Testnet3,
         utilities::{TestRng, Uniform},
+        prelude::*,
     };
     use snarkvm_console::types::Field;
 
     use crate::Account;
-
-    type CurrentNetwork = Testnet3;
 
     #[test]
     fn test_sign() {
         // Initialize the RNG.
         let mut rng = TestRng::default();
         // Prepare the account and message.
-        let account = Account::<CurrentNetwork>::new(&mut rng).unwrap();
+        let account = Account::<MainnetV0>::new(&mut rng).unwrap();
         let message = vec![Field::rand(&mut rng); 10];
         // Sign and verify.
         let signature = account.sign(&message, &mut rng).unwrap();
@@ -200,7 +197,7 @@ mod tests {
         // Initialize the RNG.
         let mut rng = TestRng::default();
         // Prepare the account and message.
-        let account = Account::<CurrentNetwork>::new(&mut rng).unwrap();
+        let account = Account::<MainnetV0>::new(&mut rng).unwrap();
         let message = (0..10).map(|_| rng.gen::<u8>()).collect::<Vec<u8>>();
         // Sign and verify.
         let signature = account.sign_bytes(&message, &mut rng).unwrap();
@@ -212,7 +209,7 @@ mod tests {
         // Initialize the RNG.
         let mut rng = TestRng::default();
         // Prepare the account and message.
-        let account = Account::<CurrentNetwork>::new(&mut rng).unwrap();
+        let account = Account::<MainnetV0>::new(&mut rng).unwrap();
         let message = (0..10).map(|_| rng.gen::<bool>()).collect::<Vec<bool>>();
         // Sign and verify.
         let signature = account.sign_bits(&message, &mut rng).unwrap();
